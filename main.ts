@@ -28,47 +28,47 @@ import { z } from "npm:zod";
 
 // --- Zod schemas for validating the OpenRouter API response ---
 const ArchitectureSchema = z.object({
-  modality: z.string(),
-  input_modalities: z.array(z.string()),
-  output_modalities: z.array(z.string()),
-  tokenizer: z.string(),
-  instruct_type: z.string().nullable(),
+	modality: z.string(),
+	input_modalities: z.array(z.string()),
+	output_modalities: z.array(z.string()),
+	tokenizer: z.string(),
+	instruct_type: z.string().nullable(),
 });
 
 const PricingSchema = z.object({
-  prompt: z.string(),
-  completion: z.string(),
-  request: z.string().optional(),
-  image: z.string().optional(),
-  web_search: z.string().optional(),
-  internal_reasoning: z.string().optional(),
-  input_cache_read: z.string().optional(),
-  input_cache_write: z.string().optional(),
+	prompt: z.string(),
+	completion: z.string(),
+	request: z.string().optional(),
+	image: z.string().optional(),
+	web_search: z.string().optional(),
+	internal_reasoning: z.string().optional(),
+	input_cache_read: z.string().optional(),
+	input_cache_write: z.string().optional(),
 });
 
 const TopProviderSchema = z.object({
-  context_length: z.number().int().nullable(),
-  max_completion_tokens: z.number().int().nullable(),
-  is_moderated: z.boolean(),
+	context_length: z.number().int().nullable(),
+	max_completion_tokens: z.number().int().nullable(),
+	is_moderated: z.boolean(),
 });
 
 const ModelSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  context_length: z.number().int(),
-  created: z.number().int(),
-  hugging_face_id: z.string().nullable(),
-  canonical_slug: z.string(),
-  architecture: ArchitectureSchema,
-  pricing: PricingSchema,
-  top_provider: TopProviderSchema,
-  per_request_limits: z.record(z.string(), z.unknown()).nullable(),
-  supported_parameters: z.array(z.string()),
+	id: z.string(),
+	name: z.string(),
+	description: z.string(),
+	context_length: z.number().int(),
+	created: z.number().int(),
+	hugging_face_id: z.string().nullable(),
+	canonical_slug: z.string(),
+	architecture: ArchitectureSchema,
+	pricing: PricingSchema,
+	top_provider: TopProviderSchema,
+	per_request_limits: z.record(z.string(), z.unknown()).nullable(),
+	supported_parameters: z.array(z.string()),
 });
 
 const OpenRouterModelsSchema = z.object({
-  data: z.array(ModelSchema),
+	data: z.array(ModelSchema),
 });
 
 // Infer TypeScript types from schemas
@@ -204,16 +204,20 @@ function filterModels(
 	}
 
 	if (args.free) {
-		filtered = filtered.filter((m) => getEffectivePrice(m.pricing.prompt, m.id) === 0);
+		filtered = filtered.filter(
+			(m) => getEffectivePrice(m.pricing.prompt, m.id) === 0,
+		);
 	}
 	// ... (add other filters similarly)
 	if (args["min-prompt-price"] != null)
 		filtered = filtered.filter(
-			(m) => getEffectivePrice(m.pricing.prompt, m.id) >= args["min-prompt-price"],
+			(m) =>
+				getEffectivePrice(m.pricing.prompt, m.id) >= args["min-prompt-price"],
 		);
 	if (args["max-prompt-price"] != null)
 		filtered = filtered.filter(
-			(m) => getEffectivePrice(m.pricing.prompt, m.id) <= args["max-prompt-price"],
+			(m) =>
+				getEffectivePrice(m.pricing.prompt, m.id) <= args["max-prompt-price"],
 		);
 	if (args["min-context"] != null)
 		filtered = filtered.filter((m) => m.context_length >= args["min-context"]);
@@ -254,12 +258,16 @@ function sortModels(models: Model[], sortBy: string, desc: boolean): Model[] {
 
 // --- Output Formatters ---
 
-const formatPrice = (priceStr: string, invert: boolean, modelId?: string): string => {
+const formatPrice = (
+	priceStr: string,
+	invert: boolean,
+	modelId?: string,
+): string => {
 	// Special handling for openrouter/auto model
 	if (modelId === "openrouter/auto") {
 		return "n/a";
 	}
-	
+
 	const price = parseFloat(priceStr);
 	if (price === 0) return invert ? "∞" : "0.00";
 	if (invert) {
