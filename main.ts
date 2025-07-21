@@ -82,6 +82,14 @@ const CACHE_EXPIRATION_HOURS = 24;
 
 // --- Helper Functions ---
 
+function getEffectivePrice(priceStr: string, modelId: string): number {
+	// Special handling for openrouter/auto model - treat as free
+	if (modelId === "openrouter/auto") {
+		return Number.MAX_SAFE_INTEGER;
+	}
+	return parseFloat(priceStr);
+}
+
 function getHumanReadableAge(createdTimestamp: number): string {
 	if (!createdTimestamp) return "Unknown";
 	const createdDate = new Date(createdTimestamp * 1000);
@@ -196,16 +204,16 @@ function filterModels(
 	}
 
 	if (args.free) {
-		filtered = filtered.filter((m) => parseFloat(m.pricing.prompt) === 0);
+		filtered = filtered.filter((m) => getEffectivePrice(m.pricing.prompt, m.id) === 0);
 	}
 	// ... (add other filters similarly)
 	if (args["min-prompt-price"] != null)
 		filtered = filtered.filter(
-			(m) => parseFloat(m.pricing.prompt) >= args["min-prompt-price"],
+			(m) => getEffectivePrice(m.pricing.prompt, m.id) >= args["min-prompt-price"],
 		);
 	if (args["max-prompt-price"] != null)
 		filtered = filtered.filter(
-			(m) => parseFloat(m.pricing.prompt) <= args["max-prompt-price"],
+			(m) => getEffectivePrice(m.pricing.prompt, m.id) <= args["max-prompt-price"],
 		);
 	if (args["min-context"] != null)
 		filtered = filtered.filter((m) => m.context_length >= args["min-context"]);
@@ -228,8 +236,8 @@ function filterModels(
 
 function sortModels(models: Model[], sortBy: string, desc: boolean): Model[] {
 	const keyMap: Record<string, (m: Model) => number | string> = {
-		prompt_price: (m) => parseFloat(m.pricing.prompt),
-		completion_price: (m) => parseFloat(m.pricing.completion),
+		prompt_price: (m) => getEffectivePrice(m.pricing.prompt, m.id),
+		completion_price: (m) => getEffectivePrice(m.pricing.completion, m.id),
 		context: (m) => m.context_length,
 		created: (m) => m.created,
 		name: (m) => m.name.toLowerCase(),
@@ -246,7 +254,12 @@ function sortModels(models: Model[], sortBy: string, desc: boolean): Model[] {
 
 // --- Output Formatters ---
 
-const formatPrice = (priceStr: string, invert: boolean): string => {
+const formatPrice = (priceStr: string, invert: boolean, modelId?: string): string => {
+	// Special handling for openrouter/auto model
+	if (modelId === "openrouter/auto") {
+		return "n/a";
+	}
+	
 	const price = parseFloat(priceStr);
 	if (price === 0) return invert ? "∞" : "0.00";
 	if (invert) {
@@ -276,8 +289,8 @@ function outputAsTable(models: Model[], args: ReturnType<typeof parseArgs>) {
 		const row = [
 			dim(model.id.padEnd(60).substring(0, 60)),
 			// model.name.padEnd(35).substring(0, 35),
-			formatPrice(model.pricing.prompt, invert).padStart(6),
-			formatPrice(model.pricing.completion, invert).padStart(6),
+			formatPrice(model.pricing.prompt, invert, model.id).padStart(6),
+			formatPrice(model.pricing.completion, invert, model.id).padStart(6),
 			model.context_length.toLocaleString().padStart(10),
 			getHumanReadableAge(model.created).padStart(12),
 			params.includes("tools") || params.includes("tool_choice")
@@ -319,8 +332,8 @@ function outputAsCsv(models: Model[], args: ReturnType<typeof parseArgs>) {
 		const row = [
 			`"${model.id}"`,
 			`"${model.name}"`,
-			formatPrice(model.pricing.prompt, invert),
-			formatPrice(model.pricing.completion, invert),
+			formatPrice(model.pricing.prompt, invert, model.id),
+			formatPrice(model.pricing.completion, invert, model.id),
 			model.context_length,
 			model.created,
 			params.includes("tools") || params.includes("tool_choice"),
@@ -351,8 +364,8 @@ function outputAsMarkdown(models: Model[], args: ReturnType<typeof parseArgs>) {
 		const row = [
 			model.id,
 			model.name,
-			formatPrice(model.pricing.prompt, invert),
-			formatPrice(model.pricing.completion, invert),
+			formatPrice(model.pricing.prompt, invert, model.id),
+			formatPrice(model.pricing.completion, invert, model.id),
 			model.context_length.toLocaleString(),
 			getHumanReadableAge(model.created),
 		];
