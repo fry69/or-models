@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-net=openrouter.ai --allow-read --allow-write
+#!/usr/bin/env -S deno run --allow-env --allow-net=openrouter.ai --allow-read --allow-write
 // -*- coding: utf-8 -*-
 
 /**
@@ -38,8 +38,8 @@ const ArchitectureSchema = z.object({
 const PricingSchema = z.object({
   prompt: z.string(),
   completion: z.string(),
-  request: z.string(),
-  image: z.string(),
+  request: z.string().optional(),
+  image: z.string().optional(),
   web_search: z.string().optional(),
   internal_reasoning: z.string().optional(),
   input_cache_read: z.string().optional(),
@@ -63,7 +63,7 @@ const ModelSchema = z.object({
   architecture: ArchitectureSchema,
   pricing: PricingSchema,
   top_provider: TopProviderSchema,
-  per_request_limits: z.record(z.unknown()).nullable(),
+  per_request_limits: z.record(z.string(), z.unknown()).nullable(),
   supported_parameters: z.array(z.string()),
 });
 
@@ -91,11 +91,11 @@ function getHumanReadableAge(createdTimestamp: number): string {
 	const deltaDays = deltaSeconds / (60 * 60 * 24);
 	if (deltaDays > 365) {
 		const years = Math.floor(deltaDays / 365);
-		return `~${years} year${years > 1 ? "s" : ""} ago`;
+		return `~${years} yr${years > 1 ? "s" : ""} ago`;
 	}
 	if (deltaDays > 30) {
 		const months = Math.floor(deltaDays / 30);
-		return `~${months} month${months > 1 ? "s" : ""} ago`;
+		return `~${months} mn${months > 1 ? "s" : ""} ago`;
 	}
 	if (deltaDays >= 1) {
 		return `${Math.floor(deltaDays)} day${
@@ -104,12 +104,12 @@ function getHumanReadableAge(createdTimestamp: number): string {
 	}
 	const deltaHours = deltaSeconds / (60 * 60);
 	if (deltaHours >= 1) {
-		return `${Math.floor(deltaHours)} hour${
+		return `${Math.floor(deltaHours)} hr${
 			Math.floor(deltaHours) > 1 ? "s" : ""
 		} ago`;
 	}
 	const deltaMinutes = deltaSeconds / 60;
-	return `${Math.floor(deltaMinutes)} minute${
+	return `${Math.floor(deltaMinutes)} min${
 		Math.floor(deltaMinutes) > 1 ? "s" : ""
 	} ago`;
 }
@@ -164,7 +164,7 @@ async function fetchModels(forceRefresh: boolean): Promise<Model[]> {
 			console.error(
 				yellow("API data structure does not match expected schema. Details:"),
 			);
-			console.error(error.errors);
+			console.error(error.message);
 		}
 		try {
 			console.error(dim("Using stale cache as a fallback."));
@@ -252,16 +252,16 @@ const formatPrice = (priceStr: string, invert: boolean): string => {
 	if (invert) {
 		return `${(1 / price / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 0 })} M`;
 	}
-	return (price * 1_000_000 * 100).toFixed(2);
+	return (price * 1_000_000).toFixed(2);
 };
 
 function outputAsTable(models: Model[], args: ReturnType<typeof parseArgs>) {
 	const invert = !!args["invert-price"];
 	const headers = [
 		"ID",
-		"Name",
-		invert ? "Prompt\n(toks/$)" : "Prompt\n(¢/M)",
-		invert ? "Compl.\n(toks/$)" : "Compl.\n(¢/M)",
+		// "Name",
+		invert ? "Prompt (toks/$)" : "Prompt ($/M)",
+		invert ? "Compl. (toks/$)" : "Compl. ($/M)",
 		"Context",
 		"Age",
 		"Tools",
@@ -274,10 +274,10 @@ function outputAsTable(models: Model[], args: ReturnType<typeof parseArgs>) {
 	for (const model of models) {
 		const params = model.supported_parameters;
 		const row = [
-			dim(model.id.padEnd(35).substring(0, 35)),
-			model.name.padEnd(35).substring(0, 35),
-			formatPrice(model.pricing.prompt, invert).padStart(10),
-			formatPrice(model.pricing.completion, invert).padStart(10),
+			dim(model.id.padEnd(60).substring(0, 60)),
+			// model.name.padEnd(35).substring(0, 35),
+			formatPrice(model.pricing.prompt, invert).padStart(6),
+			formatPrice(model.pricing.completion, invert).padStart(6),
 			model.context_length.toLocaleString().padStart(10),
 			getHumanReadableAge(model.created).padStart(12),
 			params.includes("tools") || params.includes("tool_choice")
