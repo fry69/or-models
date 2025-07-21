@@ -1,0 +1,390 @@
+#!/usr/bin/env -S deno run --allow-net=openrouter.ai --allow-read --allow-write
+// -*- coding: utf-8 -*-
+
+/**
+ * OpenRouter Model Explorer CLI (Deno Version)
+ *
+ * A command-line tool to fetch, filter, sort, and display AI models from OpenRouter.
+ *
+ * Author: Gemini
+ * Date: 2024-07-25
+ *
+ * Usage:
+ * ./or_models.ts --help
+ * ./or_models.ts "llama 3" --free --sort-by context --desc
+ * ./or_models.ts --supports-tools --max-prompt-price 0.000001 --output json
+ */
+
+import { parseArgs } from "jsr:@std/cli";
+import {
+	bold,
+	// cyan,
+	dim,
+	green,
+	magenta,
+	yellow,
+} from "jsr:@std/fmt/colors";
+import { z } from "npm:zod";
+import { type Model, OpenRouterModelsSchema } from "./schemas.ts";
+
+// --- Constants ---
+const API_URL = "https://openrouter.ai/api/v1/models";
+const CACHE_DIR = `${Deno.env.get("HOME")}/.cache/or-model-cli-deno`;
+const CACHE_FILE = `${CACHE_DIR}/or-models.json`;
+const CACHE_EXPIRATION_HOURS = 24;
+
+// --- Helper Functions ---
+
+function getHumanReadableAge(createdTimestamp: number): string {
+	if (!createdTimestamp) return "Unknown";
+	const createdDate = new Date(createdTimestamp * 1000);
+	const now = new Date();
+	const deltaSeconds = (now.getTime() - createdDate.getTime()) / 1000;
+
+	const deltaDays = deltaSeconds / (60 * 60 * 24);
+	if (deltaDays > 365) {
+		const years = Math.floor(deltaDays / 365);
+		return `~${years} year${years > 1 ? "s" : ""} ago`;
+	}
+	if (deltaDays > 30) {
+		const months = Math.floor(deltaDays / 30);
+		return `~${months} month${months > 1 ? "s" : ""} ago`;
+	}
+	if (deltaDays >= 1) {
+		return `${Math.floor(deltaDays)} day${
+			Math.floor(deltaDays) > 1 ? "s" : ""
+		} ago`;
+	}
+	const deltaHours = deltaSeconds / (60 * 60);
+	if (deltaHours >= 1) {
+		return `${Math.floor(deltaHours)} hour${
+			Math.floor(deltaHours) > 1 ? "s" : ""
+		} ago`;
+	}
+	const deltaMinutes = deltaSeconds / 60;
+	return `${Math.floor(deltaMinutes)} minute${
+		Math.floor(deltaMinutes) > 1 ? "s" : ""
+	} ago`;
+}
+
+async function fetchModels(forceRefresh: boolean): Promise<Model[]> {
+	await Deno.mkdir(CACHE_DIR, { recursive: true });
+
+	try {
+		let ageHours = 30;
+		const fileInfo = await Deno.stat(CACHE_FILE);
+		if (fileInfo) {
+			ageHours =
+				// biome-ignore lint/style/noNonNullAssertion: <try block>
+				(Date.now() - fileInfo.mtime!.getTime()) / (1000 * 60 * 60);
+		}
+		if (!forceRefresh && ageHours < CACHE_EXPIRATION_HOURS) {
+			console.error(dim("Loading models from cache..."));
+			const cachedData = await Deno.readTextFile(CACHE_FILE);
+			const jsonData = JSON.parse(cachedData);
+			return OpenRouterModelsSchema.parse(jsonData).data;
+		}
+	} catch (error) {
+		if (!(error instanceof Deno.errors.NotFound)) {
+			console.error(
+				yellow(
+					`Cache read error: ${error instanceof Error ? error.message : String(error)}`,
+				),
+			);
+		}
+	}
+
+	console.error(dim("Fetching fresh model list from OpenRouter..."));
+	try {
+		const response = await fetch(API_URL);
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		const jsonData = await response.json();
+		const validatedData = OpenRouterModelsSchema.parse(jsonData);
+		await Deno.writeTextFile(
+			CACHE_FILE,
+			JSON.stringify(validatedData, null, 2),
+		);
+		return validatedData.data;
+	} catch (error) {
+		console.error(
+			yellow(
+				`Error fetching or validating data: ${error instanceof Error ? error.message : String(error)}`,
+			),
+		);
+		if (error instanceof z.ZodError) {
+			console.error(
+				yellow("API data structure does not match expected schema. Details:"),
+			);
+			console.error(error.errors);
+		}
+		try {
+			console.error(dim("Using stale cache as a fallback."));
+			const cachedData = await Deno.readTextFile(CACHE_FILE);
+			return OpenRouterModelsSchema.parse(JSON.parse(cachedData)).data;
+		} catch {
+			console.error(yellow("Could not read fallback cache. Exiting."));
+			Deno.exit(1);
+		}
+	}
+}
+
+// --- Filtering and Sorting ---
+
+function filterModels(
+	models: Model[],
+	args: ReturnType<typeof parseArgs>,
+): Model[] {
+	let filtered = models;
+	const searchTerm = args._[0]?.toString().toLowerCase();
+
+	if (searchTerm) {
+		filtered = filtered.filter(
+			(m) =>
+				m.id.toLowerCase().includes(searchTerm) ||
+				m.name.toLowerCase().includes(searchTerm) ||
+				m.description.toLowerCase().includes(searchTerm),
+		);
+	}
+
+	if (args.free) {
+		filtered = filtered.filter((m) => parseFloat(m.pricing.prompt) === 0);
+	}
+	// ... (add other filters similarly)
+	if (args["min-prompt-price"] != null)
+		filtered = filtered.filter(
+			(m) => parseFloat(m.pricing.prompt) >= args["min-prompt-price"],
+		);
+	if (args["max-prompt-price"] != null)
+		filtered = filtered.filter(
+			(m) => parseFloat(m.pricing.prompt) <= args["max-prompt-price"],
+		);
+	if (args["min-context"] != null)
+		filtered = filtered.filter((m) => m.context_length >= args["min-context"]);
+	if (args["max-context"] != null)
+		filtered = filtered.filter((m) => m.context_length <= args["max-context"]);
+
+	const checkParam = (p: string[]) => (m: Model) =>
+		m.supported_parameters.some((sp) => p.includes(sp));
+	if (args["supports-reasoning"])
+		filtered = filtered.filter(checkParam(["reasoning", "include_reasoning"]));
+	if (args["supports-tools"])
+		filtered = filtered.filter(checkParam(["tools", "tool_choice"]));
+	if (args["supports-structured-output"])
+		filtered = filtered.filter(
+			checkParam(["structured_outputs", "response_format"]),
+		);
+
+	return filtered;
+}
+
+function sortModels(models: Model[], sortBy: string, desc: boolean): Model[] {
+	const keyMap: Record<string, (m: Model) => number | string> = {
+		prompt_price: (m) => parseFloat(m.pricing.prompt),
+		completion_price: (m) => parseFloat(m.pricing.completion),
+		context: (m) => m.context_length,
+		created: (m) => m.created,
+		name: (m) => m.name.toLowerCase(),
+	};
+	if (!keyMap[sortBy]) return models;
+	return [...models].sort((a, b) => {
+		const valA = keyMap[sortBy](a);
+		const valB = keyMap[sortBy](b);
+		if (valA < valB) return desc ? 1 : -1;
+		if (valA > valB) return desc ? -1 : 1;
+		return 0;
+	});
+}
+
+// --- Output Formatters ---
+
+const formatPrice = (priceStr: string, invert: boolean): string => {
+	const price = parseFloat(priceStr);
+	if (price === 0) return invert ? "∞" : "0.00";
+	if (invert) {
+		return `${(1 / price / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 0 })} M`;
+	}
+	return (price * 1_000_000 * 100).toFixed(2);
+};
+
+function outputAsTable(models: Model[], args: ReturnType<typeof parseArgs>) {
+	const invert = !!args["invert-price"];
+	const headers = [
+		"ID",
+		"Name",
+		invert ? "Prompt\n(toks/$)" : "Prompt\n(¢/M)",
+		invert ? "Compl.\n(toks/$)" : "Compl.\n(¢/M)",
+		"Context",
+		"Age",
+		"Tools",
+		"Reason",
+		"JSON",
+	].map((h) => bold(magenta(h)));
+
+	console.log(headers.join(" | "));
+
+	for (const model of models) {
+		const params = model.supported_parameters;
+		const row = [
+			dim(model.id.padEnd(35).substring(0, 35)),
+			model.name.padEnd(35).substring(0, 35),
+			formatPrice(model.pricing.prompt, invert).padStart(10),
+			formatPrice(model.pricing.completion, invert).padStart(10),
+			model.context_length.toLocaleString().padStart(10),
+			getHumanReadableAge(model.created).padStart(12),
+			params.includes("tools") || params.includes("tool_choice")
+				? green("✅")
+				: "❌",
+			params.includes("reasoning") || params.includes("include_reasoning")
+				? green("✅")
+				: "❌",
+			params.includes("structured_outputs") ||
+			params.includes("response_format")
+				? green("✅")
+				: "❌",
+		];
+		console.log(row.join(" | "));
+	}
+}
+
+function outputAsJson(models: Model[]) {
+	console.log(JSON.stringify(models, null, 2));
+}
+
+function outputAsCsv(models: Model[], args: ReturnType<typeof parseArgs>) {
+	const invert = !!args["invert-price"];
+	const headers = [
+		"id",
+		"name",
+		invert ? "prompt_tokens_per_dollar" : "prompt_cents_per_million",
+		invert ? "completion_tokens_per_dollar" : "completion_cents_per_million",
+		"context_length",
+		"created_unix",
+		"supports_tools",
+		"supports_reasoning",
+		"supports_structured_output",
+	];
+	console.log(headers.join(","));
+
+	for (const model of models) {
+		const params = model.supported_parameters;
+		const row = [
+			`"${model.id}"`,
+			`"${model.name}"`,
+			formatPrice(model.pricing.prompt, invert),
+			formatPrice(model.pricing.completion, invert),
+			model.context_length,
+			model.created,
+			params.includes("tools") || params.includes("tool_choice"),
+			params.includes("reasoning") || params.includes("include_reasoning"),
+			params.includes("structured_outputs") ||
+				params.includes("response_format"),
+		];
+		console.log(row.join(","));
+	}
+}
+
+function outputAsMarkdown(models: Model[], args: ReturnType<typeof parseArgs>) {
+	const invert = !!args["invert-price"];
+	const verbose = args.output === "md-verbose";
+	const headers = [
+		"ID",
+		"Name",
+		invert ? "Prompt (toks/$)" : "Prompt (¢/M)",
+		invert ? "Completion (toks/$)" : "Completion (¢/M)",
+		"Context",
+		"Age",
+	];
+
+	console.log(`| ${headers.join(" | ")} |`);
+	console.log(`| ${headers.map((h) => "-".repeat(h.length)).join(" | ")} |`);
+
+	for (const model of models) {
+		const row = [
+			model.id,
+			model.name,
+			formatPrice(model.pricing.prompt, invert),
+			formatPrice(model.pricing.completion, invert),
+			model.context_length.toLocaleString(),
+			getHumanReadableAge(model.created),
+		];
+		console.log(`| ${row.join(" | ")} |`);
+		if (verbose) {
+			console.log(`\n> ${model.description.replace(/\n/g, "\n> ")}\n`);
+		}
+	}
+}
+
+// --- Main Execution ---
+
+async function main() {
+	const args = parseArgs(Deno.args, {
+		boolean: [
+			"free",
+			"supports-reasoning",
+			"supports-tools",
+			"supports-structured-output",
+			"desc",
+			"group-by-provider",
+			"force-refresh",
+			"invert-price",
+			"help",
+		],
+		string: ["sort-by", "output"],
+		alias: { h: "help" },
+		default: {
+			"sort-by": "created",
+			output: "table",
+		},
+	});
+
+	if (args.help) {
+		console.log(`OpenRouter Model Explorer
+Usage: ./or_models.ts [search_term] [options]
+
+Options:
+  --help, -h                       Show this help message.
+  --output <format>                Output format: table, json, csv, md, md-verbose (default: table).
+  --sort-by <field>                Sort by: prompt_price, completion_price, context, created, name (default: created).
+  --desc                           Sort in descending order.
+  --invert-price                   Show price as tokens per dollar instead of cents per million.
+  --force-refresh                  Force a fresh download of the model list.
+
+Filtering:
+  --free                           Show only free models.
+  --min-prompt-price <price>       Filter by minimum prompt price per token.
+  --max-prompt-price <price>       Filter by maximum prompt price per token.
+  --min-context <length>           Filter by minimum context length.
+  --max-context <length>           Filter by maximum context length.
+  --supports-reasoning             Filter for models that support reasoning.
+  --supports-tools                 Filter for models that support tool use.
+  --supports-structured-output     Filter for models that support JSON/structured output.
+`);
+		return;
+	}
+
+	const allModels = await fetchModels(args["force-refresh"]);
+	const filtered = filterModels(allModels, args);
+	const sorted = sortModels(filtered, args["sort-by"], args.desc);
+
+	switch (args.output) {
+		case "json":
+			outputAsJson(sorted);
+			break;
+		case "csv":
+			outputAsCsv(sorted, args);
+			break;
+		case "md":
+		case "md-verbose":
+			outputAsMarkdown(sorted, args);
+			break;
+		default:
+			outputAsTable(sorted, args);
+			break;
+	}
+}
+
+if (import.meta.main) {
+	await main();
+}
