@@ -2,6 +2,7 @@
   "name": "@fry69/or-models",
   "version": "0.1.0",
   "exports": "./main.ts",
+  "license": "MIT",
   "publish": {
     "exclude": [
       ".vscode",
