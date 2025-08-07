@@ -8,9 +8,9 @@
  * A command-line tool to fetch, filter, sort, and display AI models from OpenRouter.
  */
 
-import { parseArgs } from "jsr:@std/cli";
-import { bold, dim, green, magenta, yellow } from "jsr:@std/fmt/colors";
-import { z } from "npm:zod";
+import { parseArgs } from "@std/cli";
+import { bold, dim, green, magenta, yellow } from "@std/fmt/colors";
+import { z } from "zod";
 
 // --- Zod schemas for validating the OpenRouter API response ---
 const ArchitectureSchema = z.object({
