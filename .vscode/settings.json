@@ -1,13 +1,28 @@
 {
   "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
   },
   "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "denoland.vscode-deno"
   },
-  "editor.codeActionsOnSave": {
-    "source.fixAll.biome": "explicit",
-    "source.organizeImports.biome": "explicit"
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
   },
-  "editor.formatOnSave": true
+  "[yaml]": {
+    "editor.formatOnSave": true, // optional, formats YAML on save
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2
+  },
+  "css.customData": [
+    ".vscode/tailwind.json"
+  ],
+  "deno.enable": true,
+  "deno.lint": true,
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "yaml.format.enable": true
 }
