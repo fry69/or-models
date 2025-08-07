@@ -2,18 +2,27 @@
   "version": "5",
   "specifiers": {
     "jsr:@std/cli@*": "1.0.17",
+    "jsr:@std/cli@^1.0.21": "1.0.21",
     "jsr:@std/fmt@*": "1.0.8",
-    "npm:zod@*": "4.0.5"
+    "jsr:@std/fmt@^1.0.8": "1.0.8",
+    "npm:zod@*": "4.0.5",
+    "npm:zod@^4.0.15": "4.0.15"
   },
   "jsr": {
     "@std/cli@1.0.17": {
       "integrity": "e15b9abe629e17be90cc6216327f03a29eae613365f1353837fa749aad29ce7b"
+    },
+    "@std/cli@1.0.21": {
+      "integrity": "cd25b050bdf6282e321854e3822bee624f07aca7636a3a76d95f77a3a919ca2a"
     },
     "@std/fmt@1.0.8": {
       "integrity": "71e1fc498787e4434d213647a6e43e794af4fd393ef8f52062246e06f7e372b7"
     }
   },
   "npm": {
+    "zod@4.0.15": {
+      "integrity": "sha512-2IVHb9h4Mt6+UXkyMs0XbfICUh1eUrlJJAOupBHUhLRnKkruawyDddYRCs0Eizt900ntIMk9/4RksYl+FgSpcQ=="
+    },
     "zod@4.0.5": {
       "integrity": "sha512-/5UuuRPStvHXu7RS+gmvRf4NXrNxpSllGwDnCBcJZtQsKrviYXm54yDGV2KYNLT5kq0lHGcl7lqWJLgSaG+tgA=="
     }
@@ -36,5 +45,12 @@
     "https://deno.land/x/zod@v3.23.8/locales/en.ts": "a7a25cd23563ccb5e0eed214d9b31846305ddbcdb9c5c8f508b108943366ab4c",
     "https://deno.land/x/zod@v3.23.8/mod.ts": "ec6e2b1255c1a350b80188f97bd0a6bac45801bb46fc48f50b9763aa66046039",
     "https://deno.land/x/zod@v3.23.8/types.ts": "1b172c90782b1eaa837100ebb6abd726d79d6c1ec336350c8e851e0fd706bf5c"
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@std/cli@^1.0.21",
+      "jsr:@std/fmt@^1.0.8",
+      "npm:zod@^4.0.15"
+    ]
   }
 }
