@@ -25,7 +25,14 @@ A powerful command-line tool built with Deno to fetch, filter, sort, and display
 #### Option 1: Run directly from JSR (Recommended)
 
 ```bash
-deno run -A jsr:@fry69/or-models --help
+deno run -A jsr:@fry69/or-models --version
+```
+
+> [!NOTE]
+> If there is a newer version available in [jsr.io](https://jsr.io/@fry69/or-models) Deno will **NOT** update automatically once the tool is downloaded. Refresh the local cached version manually with:
+
+```bash
+deno run --reload -A jsr:@fry69/or-models --version
 ```
 
 #### Option 2: Clone and run locally
