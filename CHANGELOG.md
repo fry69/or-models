@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.1.5
+
+- "--version" option
+
 ### 0.1.4
 
 - add jsr.io badges to readme

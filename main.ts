@@ -61,6 +61,7 @@ const OpenRouterModelsSchema = z.object({
 type Model = z.infer<typeof ModelSchema>;
 
 // --- Constants ---
+const VERSION = "0.1.5"; // must match version in `deno.json`
 const API_URL = "https://openrouter.ai/api/v1/models";
 const CACHE_DIR = `${Deno.env.get("HOME")}/.cache/or-model-cli-deno`;
 const CACHE_FILE = `${CACHE_DIR}/or-models.json`;
@@ -424,9 +425,10 @@ async function main() {
       "force-refresh",
       "invert-price",
       "help",
+      "version",
     ],
     string: ["sort-by", "output"],
-    alias: { h: "help" },
+    alias: { h: "help", v: "version" },
     default: {
       "sort-by": "created",
       output: "table",
@@ -439,6 +441,7 @@ Usage: ./or_models.ts [search_term] [options]
 
 Options:
   --help, -h                       Show this help message.
+  --version, -v                    Show version.
   --output <format>                Output format: table, json, csv, md, md-verbose (default: table).
   --sort-by <field>                Sort by: prompt_price, completion_price, context, created, name (default: created).
   --desc                           Sort in descending order.
@@ -457,6 +460,11 @@ Filtering:
   --supports-structured-output     Filter for models that support structured output.
   --supports-response-format       Filter for models that support response format (JSON mode).
   `);
+    return;
+  }
+
+  if (args.version) {
+    console.log(VERSION);
     return;
   }
 
