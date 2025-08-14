@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.1.3
+
+- fix overeager exclude in `deno.json`
+
 ### 0.1.2
 
 - split `structured_outputs` (JSON schema) and `response_format` ("JSON mode")
