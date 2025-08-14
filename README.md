@@ -131,6 +131,7 @@ deno run -A jsr:@fry69/or-models --free --supports-reasoning --sort-by context -
 ### General Options
 
 - `--help, -h` - Show help message
+- `--version, -v` - Show version
 - `--output <format>` - Output format: `table`, `json`, `csv`, `md`, `md-verbose` (default: `table`)
 - `--sort-by <field>` - Sort by: `prompt_price`, `completion_price`, `context`, `created`, `name` (default: `created`)
 - `--desc` - Sort in descending order
