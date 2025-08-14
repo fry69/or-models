@@ -87,27 +87,27 @@ function getHumanReadableAge(createdTimestamp: number): string {
   const deltaDays = deltaSeconds / (60 * 60 * 24);
   if (deltaDays > 365) {
     const years = Math.floor(deltaDays / 365);
-    return `~${years} yr${years > 1 ? "s" : ""} ago`;
+    return `~${years} yr${years > 1 ? "s" : ""}`;
   }
   if (deltaDays > 30) {
     const months = Math.floor(deltaDays / 30);
-    return `~${months} mn${months > 1 ? "s" : ""} ago`;
+    return `~${months} mn${months > 1 ? "s" : ""}`;
   }
   if (deltaDays >= 1) {
     return `${Math.floor(deltaDays)} day${
       Math.floor(deltaDays) > 1 ? "s" : ""
-    } ago`;
+    }`;
   }
   const deltaHours = deltaSeconds / (60 * 60);
   if (deltaHours >= 1) {
     return `${Math.floor(deltaHours)} hr${
       Math.floor(deltaHours) > 1 ? "s" : ""
-    } ago`;
+    }`;
   }
   const deltaMinutes = deltaSeconds / 60;
   return `${Math.floor(deltaMinutes)} min${
     Math.floor(deltaMinutes) > 1 ? "s" : ""
-  } ago`;
+  }`;
 }
 
 async function fetchModels(forceRefresh: boolean): Promise<Model[]> {
@@ -228,10 +228,14 @@ function filterModels(
   }
   if (args["supports-structured-output"]) {
     filtered = filtered.filter(
-      checkParam(["structured_outputs", "response_format"]),
+      checkParam(["structured_outputs"]),
     );
   }
-
+  if (args["supports-response-format"]) {
+    filtered = filtered.filter(
+      checkParam(["response_format"]),
+    );
+  }
   return filtered;
 }
 
@@ -276,9 +280,11 @@ const formatPrice = (
     return invert ? "∞" : "0.00";
   }
   if (invert) {
-    return `${(1 / price / 1_000_000).toLocaleString(undefined, {
-      maximumFractionDigits: 0,
-    })} M`;
+    return `${
+      (1 / price / 1_000_000).toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })
+    } M`;
   }
   return (price * 1_000_000).toFixed(2);
 };
@@ -294,6 +300,7 @@ function outputAsTable(models: Model[], args: ReturnType<typeof parseArgs>) {
     "Reason",
     "Tools",
     "JSON",
+    "Schema",
   ].map((h) => bold(magenta(h)));
 
   console.log(headers.join(" | "));
@@ -301,21 +308,19 @@ function outputAsTable(models: Model[], args: ReturnType<typeof parseArgs>) {
   for (const model of models) {
     const params = model.supported_parameters;
     const row = [
-      dim(model.id.padEnd(60).substring(0, 60)),
+      dim(model.id.substring(0, args["long"] ? 80 : 45).padEnd(45)),
       formatPrice(model.pricing.prompt, invert, model.id).padStart(6),
       formatPrice(model.pricing.completion, invert, model.id).padStart(6),
       model.context_length.toLocaleString().padStart(10),
-      getHumanReadableAge(model.created).padStart(12),
+      getHumanReadableAge(model.created).padStart(7),
       params.includes("reasoning") || params.includes("include_reasoning")
         ? green("✅")
         : "  ",
       params.includes("tools") || params.includes("tool_choice")
         ? green("✅")
         : "  ",
-      params.includes("structured_outputs") ||
-      params.includes("response_format")
-        ? green("✅")
-        : "  ",
+      params.includes("response_format") ? green("✅") : "  ",
+      params.includes("structured_outputs") ? green("✅") : "  ",
     ];
     console.log(row.join(" | "));
   }
@@ -330,12 +335,13 @@ function outputAsCsv(models: Model[], args: ReturnType<typeof parseArgs>) {
   const headers = [
     "id",
     "name",
-    invert ? "prompt_tokens_per_dollar" : "prompt_cents_per_million",
-    invert ? "completion_tokens_per_dollar" : "completion_cents_per_million",
+    invert ? "prompt_tokens_per_dollar" : "prompt_dollar_per_million",
+    invert ? "completion_tokens_per_dollar" : "completion_dollar_per_million",
     "context_length",
     "created_unix",
     "supports_reasoning",
     "supports_tools",
+    "supports_response_format",
     "supports_structured_output",
   ];
   console.log(headers.join(","));
@@ -351,8 +357,8 @@ function outputAsCsv(models: Model[], args: ReturnType<typeof parseArgs>) {
       model.created,
       params.includes("reasoning") || params.includes("include_reasoning"),
       params.includes("tools") || params.includes("tool_choice"),
-      params.includes("structured_outputs") ||
-        params.includes("response_format"),
+      params.includes("response_format"),
+      params.includes("structured_outputs"),
     ];
     console.log(row.join(","));
   }
@@ -363,29 +369,43 @@ function outputAsMarkdown(models: Model[], args: ReturnType<typeof parseArgs>) {
   const verbose = args.output === "md-verbose";
   const headers = [
     "ID",
-    "Name",
-    invert ? "Prompt (toks/$)" : "Prompt (¢/M)",
-    invert ? "Completion (toks/$)" : "Completion (¢/M)",
+    verbose ? "Name" : null,
+    verbose ? (invert ? "Prompt (toks/$)" : "Prompt ($/M)") : null,
+    invert ? "Completion (toks/$)" : "Completion ($/M)",
     "Context",
     "Age",
+    "Reason",
+    "Tools",
+    "JSON",
+    "Schema",
   ];
 
   console.log(`| ${headers.join(" | ")} |`);
-  console.log(`| ${headers.map((h) => "-".repeat(h.length)).join(" | ")} |`);
+  console.log(
+    `| ${
+      headers.filter((h) => h != null).map((h) => "-".repeat(h.length)).join(
+        " | ",
+      )
+    } |`,
+  );
 
   for (const model of models) {
+    const params = model.supported_parameters;
     const row = [
       model.id,
-      model.name,
-      formatPrice(model.pricing.prompt, invert, model.id),
+      verbose ? model.name : null,
+      verbose ? (formatPrice(model.pricing.prompt, invert, model.id)) : null,
       formatPrice(model.pricing.completion, invert, model.id),
       model.context_length.toLocaleString(),
       getHumanReadableAge(model.created),
+      params.includes("reasoning") || params.includes("include_reasoning")
+        ? "✅"
+        : " ",
+      params.includes("tools") || params.includes("tool_choice") ? "✅" : " ",
+      params.includes("response_format") ? "✅" : " ",
+      params.includes("structured_outputs") ? "✅" : " ",
     ];
-    console.log(`| ${row.join(" | ")} |`);
-    if (verbose) {
-      console.log(`\n> ${model.description.replace(/\n/g, "\n> ")}\n`);
-    }
+    console.log(`| ${row.filter((r) => r != null).join(" | ")} |`);
   }
 }
 
@@ -394,6 +414,7 @@ function outputAsMarkdown(models: Model[], args: ReturnType<typeof parseArgs>) {
 async function main() {
   const args = parseArgs(Deno.args, {
     boolean: [
+      "long",
       "free",
       "supports-reasoning",
       "supports-tools",
@@ -421,8 +442,9 @@ Options:
   --output <format>                Output format: table, json, csv, md, md-verbose (default: table).
   --sort-by <field>                Sort by: prompt_price, completion_price, context, created, name (default: created).
   --desc                           Sort in descending order.
-  --invert-price                   Show price as tokens per dollar instead of cents per million.
+  --invert-price                   Show price as tokens per dollar instead of dollar per million.
   --force-refresh                  Force a fresh download of the model list.
+  --long                           Output long model names, possibly breaking terminal layout (default: off).
 
 Filtering:
   --free                           Show only free models.
@@ -432,8 +454,9 @@ Filtering:
   --max-context <length>           Filter by maximum context length.
   --supports-reasoning             Filter for models that support reasoning.
   --supports-tools                 Filter for models that support tool use.
-  --supports-structured-output     Filter for models that support JSON/structured output.
-`);
+  --supports-structured-output     Filter for models that support structured output.
+  --supports-response-format       Filter for models that support response format (JSON mode).
+  `);
     return;
   }
 

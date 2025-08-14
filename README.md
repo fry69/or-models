@@ -21,11 +21,13 @@ A powerful command-line tool built with Deno to fetch, filter, sort, and display
 ### Quick Start
 
 #### Option 1: Run directly from JSR (Recommended)
+
 ```bash
 deno run -A jsr:@fry69/or-models --help
 ```
 
 #### Option 2: Clone and run locally
+
 1. Clone this repository:
 ```bash
 git clone https://github.com/fry69/or-models-cli.git
@@ -125,14 +127,17 @@ deno run -A jsr:@fry69/or-models --free --supports-reasoning --sort-by context -
 ## Command Line Options
 
 ### General Options
+
 - `--help, -h` - Show help message
 - `--output <format>` - Output format: `table`, `json`, `csv`, `md`, `md-verbose` (default: `table`)
 - `--sort-by <field>` - Sort by: `prompt_price`, `completion_price`, `context`, `created`, `name` (default: `created`)
 - `--desc` - Sort in descending order
-- `--invert-price` - Show price as tokens per dollar instead of cents per million
+- `--invert-price` - Show price as tokens per dollar instead of dollar per million
 - `--force-refresh` - Force fresh download of model list
+- `--long` - Output long model names, possibly breaking terminal layout (default: off)
 
 ### Filtering Options
+
 - `--free` - Show only free models
 - `--min-prompt-price <price>` - Filter by minimum prompt price per token
 - `--max-prompt-price <price>` - Filter by maximum prompt price per token
@@ -140,21 +145,24 @@ deno run -A jsr:@fry69/or-models --free --supports-reasoning --sort-by context -
 - `--max-context <length>` - Filter by maximum context length
 - `--supports-reasoning` - Filter for models that support reasoning
 - `--supports-tools` - Filter for models that support tool use
-- `--supports-structured-output` - Filter for models that support JSON/structured output
+- `--supports-structured-output` - Filter for models that support structured output
+- `--supports-response-format` - Filter for models that support response format (JSON mode)
 
 ## Output Examples
 
 ### Table Format
+
 ```
 Loading models from cache...
-ID | Prompt ($/M) | Compl. ($/M) | Context | Age | Reason | Tools | JSON
-openai/gpt-4                                                 |  30.00 |  60.00 |      8,191 |   ~2 yrs ago |    | ✅ | ✅
-openai/gpt-3.5-turbo                                         |   0.50 |   1.50 |     16,385 |   ~2 yrs ago |    | ✅ | ✅
-openai/gpt-4-0314                                            |  30.00 |  60.00 |      8,191 |   ~2 yrs ago |    | ✅ | ✅
-gryphe/mythomax-l2-13b                                       |   0.06 |   0.06 |      4,096 |   ~2 yrs ago |    |    | ✅
+ID | Prompt ($/M) | Compl. ($/M) | Context | Age | Reason | Tools | JSON | Schema
+openai/gpt-3.5-turbo                          |   0.50 |   1.50 |     16,385 |  ~2 yrs |    | ✅ | ✅ | ✅
+openai/gpt-4                                  |  30.00 |  60.00 |      8,191 |  ~2 yrs |    | ✅ | ✅ | ✅
+openai/gpt-4-0314                             |  30.00 |  60.00 |      8,191 |  ~2 yrs |    | ✅ | ✅ | ✅
+gryphe/mythomax-l2-13b                        |   0.06 |   0.06 |      4,096 |  ~2 yrs |    |    | ✅ | ✅
 ```
 
 ### JSON Format
+
 ```json
 [
   {
@@ -217,16 +225,19 @@ The tool automatically caches model data in `~/.cache/or-model-cli-deno/or-model
 ## Development
 
 ### Project Structure
+
 - `main.ts` - Main CLI application with all functionality
 - `deno.json` - Deno configuration and dependencies
 - `deno.lock` - Dependency lock file
 
 ### Dependencies
+
 - `@std/cli` - Command-line argument parsing
 - `@std/fmt/colors` - Terminal color formatting
 - `zod` - Runtime type validation for API responses
 
 ### Type Safety
+
 The project uses Zod schemas to validate the OpenRouter API response structure, ensuring type safety and graceful error handling when the API changes.
 
 ## Contributing
