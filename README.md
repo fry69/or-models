@@ -1,4 +1,6 @@
 # OpenRouter Model Explorer CLI
+[![JSR](https://jsr.io/badges/@fry69/or-models)](https://jsr.io/@fry69/or-models)
+[![JSR Score](https://jsr.io/badges/@fry69/or-models/score)](https://jsr.io/@fry69/or-models/score)
 
 A powerful command-line tool built with Deno to fetch, filter, sort, and display AI models from the OpenRouter API. Easily discover and compare models with support for various output formats and advanced filtering options.
 

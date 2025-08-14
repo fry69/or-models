@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.1.4
+
+- add jsr.io badges to readme
+
 ### 0.1.3
 
 - fix overeager exclude in `deno.json`
