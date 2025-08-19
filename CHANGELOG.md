@@ -1,5 +1,10 @@
 # Changelog
 
+
+### 0.2.4
+
+- pin jsr.io standalone imports correctly
+
 ### 0.2.3
 
 - fix jsr.io standalone imports

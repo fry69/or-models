@@ -8,8 +8,8 @@
  * A command-line tool to fetch, filter, sort, and display AI models from OpenRouter.
  */
 
-import { parseArgs } from "jsr:@std/cli";
-import { bold, dim, green, magenta, yellow } from "jsr:@std/fmt/colors";
+import { parseArgs } from "jsr:@std/cli@1.0.21";
+import { bold, dim, green, magenta, yellow } from "jsr:@std/fmt@1.0.8/colors";
 import { z } from "npm:zod@4.0.5";
 
 // --- Zod schemas for validating the OpenRouter API response ---
@@ -61,7 +61,7 @@ const OpenRouterModelsSchema = z.object({
 type Model = z.infer<typeof ModelSchema>;
 
 // --- Constants ---
-const VERSION = "0.2.3"; // must match version in `deno.json`
+const VERSION = "0.2.4"; // must match version in `deno.json`
 const API_URL = "https://openrouter.ai/api/v1/models";
 const CACHE_DIR = `${Deno.env.get("HOME")}/.cache/or-models`;
 const CACHE_FILE = `${CACHE_DIR}/models.json`;
