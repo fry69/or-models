@@ -61,7 +61,7 @@ const OpenRouterModelsSchema = z.object({
 type Model = z.infer<typeof ModelSchema>;
 
 // --- Constants ---
-const VERSION = "0.2.1"; // must match version in `deno.json`
+const VERSION = "0.2.2"; // must match version in `deno.json`
 const API_URL = "https://openrouter.ai/api/v1/models";
 const CACHE_DIR = `${Deno.env.get("HOME")}/.cache/or-models`;
 const CACHE_FILE = `${CACHE_DIR}/models.json`;

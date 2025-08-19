@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.2.2
+
+- pin zod import version
+
 ### 0.2.1
 
 - add total/mached model count
