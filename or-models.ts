@@ -10,7 +10,7 @@
 
 import { parseArgs } from "@std/cli";
 import { bold, dim, green, magenta, yellow } from "@std/fmt/colors";
-import { z } from "zod";
+import { z } from "npm:zod";
 
 // --- Zod schemas for validating the OpenRouter API response ---
 const ArchitectureSchema = z.object({
@@ -61,10 +61,10 @@ const OpenRouterModelsSchema = z.object({
 type Model = z.infer<typeof ModelSchema>;
 
 // --- Constants ---
-const VERSION = "0.1.5"; // must match version in `deno.json`
+const VERSION = "0.2.0"; // must match version in `deno.json`
 const API_URL = "https://openrouter.ai/api/v1/models";
-const CACHE_DIR = `${Deno.env.get("HOME")}/.cache/or-model-cli-deno`;
-const CACHE_FILE = `${CACHE_DIR}/or-models.json`;
+const CACHE_DIR = `${Deno.env.get("HOME")}/.cache/or-models`;
+const CACHE_FILE = `${CACHE_DIR}/models.json`;
 const CACHE_EXPIRATION_HOURS = 24;
 
 // --- Helper Functions ---

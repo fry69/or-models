@@ -39,23 +39,23 @@ deno run --reload -A jsr:@fry69/or-models --version
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/fry69/or-models-cli.git
-cd or-models-cli
+git clone https://github.com/fry69/or-models.git
+cd or-models
 ```
 
 2. Make the script executable:
 ```bash
-chmod +x main.ts
+chmod +x or-models.ts
 ```
 
 3. Run the tool:
 ```bash
-./main.ts --help
+./or-models.ts --help
 ```
 
 #### Option 3: Direct execution
 ```bash
-deno run --allow-env --allow-net=openrouter.ai --allow-read --allow-write main.ts
+deno run --allow-env --allow-net=openrouter.ai --allow-read --allow-write or-models.ts
 ```
 
 ## Usage
@@ -230,13 +230,13 @@ gryphe/mythomax-l2-13b                        |   0.06 |   0.06 |      4,096 |  
 
 ## Cache Management
 
-The tool automatically caches model data in `~/.cache/or-model-cli-deno/or-models.json` for 24 hours to improve performance and reduce API calls. Use `--force-refresh` to bypass the cache when needed.
+The tool automatically caches model data in `~/.cache/or-models/models.json` for 24 hours to improve performance and reduce API calls. Use `--force-refresh` to bypass the cache when needed.
 
 ## Development
 
 ### Project Structure
 
-- `main.ts` - Main CLI application with all functionality
+- `or-models.ts` - Main CLI application with all functionality
 - `deno.json` - Deno configuration and dependencies
 - `deno.lock` - Dependency lock file
 

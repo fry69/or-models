@@ -1,7 +1,11 @@
 # Changelog
 
-### unreleased
+### 0.2.0
 
+- fixed imports, so script can run standalone
+- renamed cache directory/file
+- renamed script to or-models.ts
+- renamed repository
 - update readme
 
 ### 0.1.5
