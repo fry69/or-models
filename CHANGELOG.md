@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.2.6
+
+- fix version number in script
+
 ### 0.2.5
 
 - remove imports from deno.json

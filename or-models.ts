@@ -61,14 +61,14 @@ const OpenRouterModelsSchema = z.object({
 type Model = z.infer<typeof ModelSchema>;
 
 // --- Constants ---
-const VERSION = "0.2.4"; // must match version in `deno.json`
+const VERSION = "0.2.6"; // must match version in `deno.json`
 const API_URL = "https://openrouter.ai/api/v1/models";
 const CACHE_DIR = `${Deno.env.get("HOME")}/.cache/or-models`;
 const CACHE_FILE = `${CACHE_DIR}/models.json`;
 const CACHE_EXPIRATION_HOURS = 24;
 
 // --- Global variables ---
-let allModels:Model[] = [];
+let allModels: Model[] = [];
 
 // --- Helper Functions ---
 
@@ -294,7 +294,9 @@ const formatPrice = (
 };
 
 function outputAsTable(models: Model[], args: ReturnType<typeof parseArgs>) {
-  console.warn(dim(`Total models: ${allModels.length} Matched models: ${models.length}`));
+  console.warn(
+    dim(`Total models: ${allModels.length} Matched models: ${models.length}`),
+  );
   const invert = !!args["invert-price"];
   const headers = [
     "ID",
