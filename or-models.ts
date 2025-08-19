@@ -61,11 +61,14 @@ const OpenRouterModelsSchema = z.object({
 type Model = z.infer<typeof ModelSchema>;
 
 // --- Constants ---
-const VERSION = "0.2.0"; // must match version in `deno.json`
+const VERSION = "0.2.1"; // must match version in `deno.json`
 const API_URL = "https://openrouter.ai/api/v1/models";
 const CACHE_DIR = `${Deno.env.get("HOME")}/.cache/or-models`;
 const CACHE_FILE = `${CACHE_DIR}/models.json`;
 const CACHE_EXPIRATION_HOURS = 24;
+
+// --- Global variables ---
+let allModels:Model[] = [];
 
 // --- Helper Functions ---
 
@@ -121,7 +124,7 @@ async function fetchModels(forceRefresh: boolean): Promise<Model[]> {
       ageHours = (Date.now() - fileInfo.mtime!.getTime()) / (1000 * 60 * 60);
     }
     if (!forceRefresh && ageHours < CACHE_EXPIRATION_HOURS) {
-      console.error(dim("Loading models from cache..."));
+      console.warn(dim("Loading models from cache..."));
       const cachedData = await Deno.readTextFile(CACHE_FILE);
       const jsonData = JSON.parse(cachedData);
       return OpenRouterModelsSchema.parse(jsonData).data;
@@ -138,7 +141,7 @@ async function fetchModels(forceRefresh: boolean): Promise<Model[]> {
     }
   }
 
-  console.error(dim("Fetching fresh model list from OpenRouter..."));
+  console.warn(dim("Fetching fresh model list from OpenRouter..."));
   try {
     const response = await fetch(API_URL);
     if (!response.ok) {
@@ -166,7 +169,7 @@ async function fetchModels(forceRefresh: boolean): Promise<Model[]> {
       console.error(error.message);
     }
     try {
-      console.error(dim("Using stale cache as a fallback."));
+      console.warn(dim("Using stale cache as a fallback."));
       const cachedData = await Deno.readTextFile(CACHE_FILE);
       return OpenRouterModelsSchema.parse(JSON.parse(cachedData)).data;
     } catch {
@@ -291,6 +294,7 @@ const formatPrice = (
 };
 
 function outputAsTable(models: Model[], args: ReturnType<typeof parseArgs>) {
+  console.warn(dim(`Total models: ${allModels.length} Matched models: ${models.length}`));
   const invert = !!args["invert-price"];
   const headers = [
     "ID",
@@ -468,7 +472,7 @@ Filtering:
     return;
   }
 
-  const allModels = await fetchModels(args["force-refresh"]);
+  allModels = await fetchModels(args["force-refresh"]);
   const filtered = filterModels(allModels, args);
   const sorted = sortModels(filtered, args["sort-by"], args.desc);
 

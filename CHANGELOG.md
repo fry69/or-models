@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.2.1
+
+- add total/mached model count
+- fixed error/warn messages
+
 ### 0.2.0
 
 - fixed imports, so script can run standalone
