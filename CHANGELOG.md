@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.2.3
+
+- fix jsr.io standalone imports
+
 ### 0.2.2
 
 - pin zod import version
