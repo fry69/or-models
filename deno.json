@@ -1,6 +1,6 @@
 {
   "name": "@fry69/or-models",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "exports": "./or-models.ts",
   "license": "MIT",
   "publish": {
@@ -12,10 +12,5 @@
   "tasks": {
     "start": "deno run --allow-env --allow-write --allow-read --allow-net=openrouter.ai or-models.ts",
     "fmt": "deno fmt or-models.ts"
-  },
-  "imports": {
-    "@std/cli": "jsr:@std/cli@^1.0.21",
-    "@std/fmt": "jsr:@std/fmt@^1.0.8",
-    "zod": "npm:zod@^4.0.15"
   }
 }
