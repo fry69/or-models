@@ -10,7 +10,7 @@
 
 import { parseArgs } from "@std/cli";
 import { bold, dim, green, magenta, yellow } from "@std/fmt/colors";
-import { z } from "npm:zod";
+import { z } from "npm:zod@4.0.5";
 
 // --- Zod schemas for validating the OpenRouter API response ---
 const ArchitectureSchema = z.object({
