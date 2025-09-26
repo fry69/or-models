@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.2.7
+
+- update license year
+
 ### 0.2.6
 
 - fix version number in script
