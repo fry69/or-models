@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.2.8
+
+- convert publish workflow to Deno
+
 ### 0.2.7
 
 - update license year
